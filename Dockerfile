@@ -1,6 +1,6 @@
 FROM node:10.16.0
 ARG codeServerVersion=docker
-ARG vscodeVersion
+ARG vscodeVersion=1.39.2
 ARG githubToken
 
 # Install VS Code's deps. These are the only two it seems we need.
@@ -53,7 +53,7 @@ WORKDIR /home/coder/project
 
 # This ensures we have a volume mounted even if the user forgot to do bind
 # mount. So that they do not lose their data if they delete the container.
-VOLUME [ "/home/coder/project" ]
+#VOLUME [ "/home/coder/project" ]
 
 COPY --from=0 /src/binaries/code-server /usr/local/bin/code-server
 EXPOSE 8080
