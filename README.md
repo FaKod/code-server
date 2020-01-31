@@ -6,7 +6,7 @@ remote server, accessible through the browser.
 Try it out:
 
 ```bash
-docker run -it -p 127.0.0.1:8080:8080 -v "${HOME}/.local/share/code-server:/home/coder/.local/share/code-server" -v "$PWD:/home/coder/project" codercom/code-server:v2
+docker run -it -p 127.0.0.1:8080:8080 -v "$PWD:/home/coder/project" codercom/code-server
 ```
 
 - **Consistent environment:** Code on your Chromebook, tablet, and laptop with a
@@ -64,11 +64,11 @@ See
 before building.
 
 ```shell
-export OUT=/path/to/output/build                  # Optional if only building. Required if also developing.
-yarn build ${vscodeVersion} ${codeServerVersion}  # See travis.yml for the VS Code version to use.
-                                                  # The code-server version can be anything you want.
-node /path/to/output/build/out/vs/server/main.js  # You can run the built JavaScript with Node.
-yarn binary ${vscodeVersion} ${codeServerVersion} # Or you can package it into a binary.
+export OUT=/path/to/output/build                 # Optional if only building. Required if also developing.
+yarn build $vscodeVersion $codeServerVersion     # See travis.yml for the VS Code version to use.
+                                                 # The code-server version can be anything you want.
+node /path/to/output/build/out/vs/server/main.js # You can run the built JavaScript with Node.
+yarn binary $vscodeVersion $codeServerVersion    # Or you can package it into a binary.
 ```
 
 ## Security
@@ -174,8 +174,6 @@ Our changes include:
 - Modify the loader, websocket, webview, service worker, and asset requests to
   use the URL of the page as a base (and TLS if necessary for the websocket).
 - Send client-side telemetry through the server.
-- Add an upload service along with a file prefix to ignore for temporary files
-  created during upload.
 - Make changing the display language work.
 - Make it possible for us to load code on the client.
 - Make extensions work in the browser.
@@ -188,8 +186,8 @@ Our changes include:
 
 ## Enterprise
 
-Visit [our enterprise page](https://coder.com/enterprise) for more information
-about our enterprise offering.
+Visit [our enterprise page](https://coder.com) for more information about our
+enterprise offering.
 
 ## Commercialization
 

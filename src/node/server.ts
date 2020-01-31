@@ -17,7 +17,7 @@ import { generateUuid } from "vs/base/common/uuid";
 import { getMachineId } from 'vs/base/node/id';
 import { NLSConfiguration } from "vs/base/node/languagePacks";
 import { mkdirp, rimraf } from "vs/base/node/pfs";
-import { ClientConnectionEvent, IPCServer } from "vs/base/parts/ipc/common/ipc";
+import { ClientConnectionEvent, IPCServer, IServerChannel } from "vs/base/parts/ipc/common/ipc";
 import { createChannelReceiver } from "vs/base/parts/ipc/node/ipc";
 import { LogsDataCleaner } from "vs/code/electron-browser/sharedProcess/contrib/logsDataCleaner";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
@@ -43,6 +43,7 @@ import { SpdLogService } from "vs/platform/log/node/spdlogService";
 import product from 'vs/platform/product/common/product';
 import { IProductService } from "vs/platform/product/common/productService";
 import { ConnectionType, ConnectionTypeRequest } from "vs/platform/remote/common/remoteAgentConnection";
+import { RemoteAgentConnectionContext } from "vs/platform/remote/common/remoteAgentEnvironment";
 import { REMOTE_FILE_SYSTEM_CHANNEL_NAME } from "vs/platform/remote/common/remoteAgentFileSystemChannel";
 import { IRequestService } from "vs/platform/request/common/request";
 import { RequestChannel } from "vs/platform/request/common/requestIpc";
@@ -296,8 +297,10 @@ export abstract class Server {
 		switch (base) {
 			case "/":
 				switch (requestPath) {
-					case "/favicon.ico":
+					// NOTE: This must be served at the correct location based on the
+					// start_url in the manifest.
 					case "/manifest.json":
+					case "/code-server.png":
 						const response = await this.getResource(this.serverRoot, "media", requestPath);
 						response.cache = true;
 						return response;
@@ -485,7 +488,7 @@ interface Settings {
 export class MainServer extends Server {
 	public readonly _onDidClientConnect = new Emitter<ClientConnectionEvent>();
 	public readonly onDidClientConnect = this._onDidClientConnect.event;
-	private readonly ipc = new IPCServer(this.onDidClientConnect);
+	private readonly ipc = new IPCServer<RemoteAgentConnectionContext>(this.onDidClientConnect);
 
 	private readonly maxExtraOfflineConnections = 0;
 	private readonly connections = new Map<ConnectionType, Map<string, Connection>>();
@@ -750,7 +753,7 @@ export class MainServer extends Server {
 		if (!environmentService.args["disable-telemetry"]) {
 			this.services.set(ITelemetryService, new SyncDescriptor(TelemetryService, [{
 				appender: combinedAppender(
-					new AppInsightsAppender("code-server", null, () => new TelemetryClient(), logService),
+					new AppInsightsAppender("code-server", null, () => new TelemetryClient() as any, logService),
 					new LogAppender(logService),
 				),
 				commonProperties: resolveCommonProperties(
@@ -781,7 +784,7 @@ export class MainServer extends Server {
 				this.ipc.registerChannel("request", new RequestChannel(this.services.get(IRequestService) as IRequestService));
 				this.ipc.registerChannel("telemetry", new TelemetryChannel(telemetryService));
 				this.ipc.registerChannel("nodeProxy", new NodeProxyChannel(this.services.get(INodeProxyService) as INodeProxyService));
-				this.ipc.registerChannel("localizations", createChannelReceiver(this.services.get(ILocalizationsService) as ILocalizationsService));
+				this.ipc.registerChannel("localizations", <IServerChannel<any>>createChannelReceiver(this.services.get(ILocalizationsService) as ILocalizationsService));
 				this.ipc.registerChannel("update", new UpdateChannel(instantiationService.createInstance(UpdateService)));
 				this.ipc.registerChannel(REMOTE_FILE_SYSTEM_CHANNEL_NAME, new FileProviderChannel(environmentService, logService));
 				resolve(new ErrorTelemetry(telemetryService));
